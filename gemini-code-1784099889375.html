@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrainerHub - نظام إدارة التدريب الاحترافي</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for modern icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap');
+        body {
+            font-family: 'Cairo', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header Navigation -->
+    <header class="bg-indigo-900 text-white shadow-md px-6 py-4 flex flex-wrap justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center space-x-3 space-x-reverse">
+            <div class="bg-indigo-600 p-2 rounded-lg">
+                <i class="fas fa-graduation-cap text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wide">TrainerHub</h1>
+                <p class="text-xs text-indigo-200">نظام إدارة المجموعات والسيشنز الذكي</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4 space-x-reverse mt-2 sm:mt-0">
+            <div class="text-sm text-indigo-100 hidden md:block">
+                <i class="far fa-calendar-alt ml-1"></i> <span id="current-date">الأربعاء، 15 يوليو 2026</span>
+            </div>
+            <button onclick="openModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center shadow-md">
+                <i class="fas fa-plus ml-2"></i> إضافة جروب جديد
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-grow p-4 md:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Sidebar & Groups Selection (3 Cols) -->
+        <section class="lg:col-span-4 flex flex-col space-y-4">
+            <!-- Global Stats Brief -->
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                <h3 class="text-sm font-semibold text-slate-500 mb-3">إحصائيات سريعة</h3>
+                <div class="grid grid-cols-2 gap-2 text-center">
+                    <div class="bg-indigo-50 p-3 rounded-lg">
+                        <span id="stat-active-groups" class="block text-2xl font-bold text-indigo-900">0</span>
+                        <span class="text-xs text-slate-500">الجروبات النشطة</span>
+                    </div>
+                    <div class="bg-emerald-50 p-3 rounded-lg">
+                        <span id="stat-total-sessions" class="block text-2xl font-bold text-emerald-700">0</span>
+                        <span class="text-xs text-slate-500">سيشن تم إنجازها</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Groups Navigation / Selector List -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex-grow flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center">
+                        <i class="fas fa-users text-indigo-600 ml-2"></i> المجموعات التدريبية
+                    </h2>
+                    <span id="groups-count" class="bg-slate-100 text-slate-600 text-xs font-semibold px-2.5 py-0.5 rounded-full">0 جروب</span>
+                </div>
+                
+                <!-- Search & Filter -->
+                <div class="relative mb-4">
+                    <input type="text" id="group-search" oninput="filterGroups()" placeholder="بحث باسم الجروب أو المستوى..." class="w-full text-sm pl-4 pr-10 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <span class="absolute right-3 top-2.5 text-slate-400">
+                        <i class="fas fa-search"></i>
+                    </span>
+                </div>
+
+                <!-- Interactive Groups Container -->
+                <div id="groups-list" class="space-y-3 max-h-[400px] lg:max-h-[500px] overflow-y-auto pr-1">
+                    <!-- Loaded dynamically via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Dashboard Workspace (8 Cols) -->
+        <section class="lg:col-span-8 space-y-6">
+            
+            <!-- Default Empty State -->
+            <div id="empty-state" class="bg-white rounded-xl shadow-sm border border-slate-100 p-12 text-center flex flex-col items-center justify-center min-h-[450px]">
+                <div class="bg-indigo-50 text-indigo-500 p-6 rounded-full mb-4">
+                    <i class="fas fa-folder-open text-5xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2">مرحباً بكِ في لوحة تحكمكِ الذكية</h3>
+                <p class="text-slate-500 max-w-md mx-auto mb-6 text-sm leading-relaxed">
+                    اختاري مجموعة من القائمة الجانبية لعرض التقدم والجدول المنهجي والتحكم بالملفات والملاحظات والمؤقت، أو قومي بإضافة مجموعة جديدة للبدء.
+                </p>
+                <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 shadow-sm">
+                    إضافة أول جروب الآن
+                </button>
+            </div>
+
+            <!-- Active Dashboard View (Hidden when no group selected) -->
+            <div id="active-dashboard" class="hidden space-y-6">
+                
+                <!-- Active Group Header Info & Timer Panel -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                    <div class="md:col-span-7 space-y-2">
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <span id="active-group-level" class="bg-indigo-100 text-indigo-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">المستوى 1</span>
+                            <span id="active-group-course" class="bg-slate-100 text-slate-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">بايثون</span>
+                        </div>
+                        <h2 id="active-group-name" class="text-2xl font-bold text-slate-800">اسم الجروب</h2>
+                        <p class="text-sm text-slate-500 flex items-center">
+                            <i class="far fa-clock ml-1.5 text-slate-400"></i> <span id="active-group-schedule">السبت والثلاثاء 4:00م</span>
+                            <span class="mx-2">•</span>
+                            <i class="fas fa-user-friends ml-1.5 text-slate-400"></i> <span id="active-group-students">12 طالب وطالبة</span>
+                        </p>
+                    </div>
+
+                    <!-- Interactive Session Timer -->
+                    <div class="md:col-span-5 bg-slate-900 text-white rounded-xl p-4 flex flex-col items-center justify-center relative overflow-hidden">
+                        <div class="absolute top-1 right-2 text-[10px] text-slate-400 uppercase tracking-wider font-bold">مؤقت الحصة المباشر</div>
+                        <div id="timer-display" class="text-3xl font-mono font-bold tracking-widest text-emerald-400 mb-2 mt-1">00:00:00</div>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button id="timer-btn" onclick="toggleTimer()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold py-1 px-3 rounded-full transition">
+                                <i class="fas fa-play ml-1"></i> ابدأ المؤقت
+                            </button>
+                            <button onclick="resetTimer()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-1 px-3 rounded-full transition">
+                                <i class="fas fa-redo ml-1"></i> تصفير
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Tracker & Action Bar -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-800 flex items-center">
+                            <i class="fas fa-chart-line text-indigo-600 ml-2"></i> حالة إنجاز المنهج الدراسي
+                        </h3>
+                        <span id="active-group-progress-text" class="text-sm font-semibold text-indigo-700">3 / 12 جلسة (25%)</span>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-slate-100 h-4 rounded-full overflow-hidden mb-6">
+                        <div id="active-group-progress-bar" class="bg-indigo-600 h-full rounded-full transition-all duration-500" style="width: 25%"></div>
+                    </div>
+
+                    <!-- Quick Log Action -->
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="logSessionAction()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 px-4 rounded-lg transition flex items-center shadow-sm">
+                            <i class="fas fa-check-double ml-2"></i> تسجيل إتمام الجلسة الحالية
+                        </button>
+                        <button onclick="openNoteSection()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold py-2.5 px-4 rounded-lg transition flex items-center">
+                            <i class="far fa-edit ml-2"></i> تدوين ملاحظة
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Two Column Details Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Column 1: Timeline & Next Session -->
+                    <div class="space-y-6">
+                        <!-- Next Session AI Plan -->
+                        <div class="bg-gradient-to-r from-violet-600 to-indigo-700 text-white rounded-xl p-5 shadow-sm">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-200 mb-2">خطة الجلسة القادمة التلقائية (Next Session)</h4>
+                            <div class="flex items-start space-x-3 space-x-reverse">
+                                <div class="bg-white/20 p-2 rounded-lg mt-0.5">
+                                    <i class="fas fa-lightbulb text-amber-300 text-lg"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-lg" id="next-session-plan">جاري التحديد...</p>
+                                    <p class="text-xs text-indigo-100 mt-1" id="next-session-tip">تحضير أمثلة عملية وتطبيق فوري في السيشن.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline View -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+                            <h3 class="font-bold text-slate-800 mb-4 flex items-center">
+                                <i class="fas fa-history text-indigo-600 ml-2"></i> التسلسل الزمني للمجموعة (Timeline)
+                            </h3>
+                            <div id="active-timeline" class="space-y-4 relative border-r border-slate-100 mr-3 pr-4">
+                                <!-- Populated via JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Files, Student Notes & Tasks -->
+                    <div class="space-y-6">
+                        
+                        <!-- Tasks Assigned Section -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+                            <h3 class="font-bold text-slate-800 mb-4 flex items-center">
+                                <i class="fas fa-tasks text-emerald-600 ml-2"></i> الواجبات والمشاريع المسلمة (Tasks)
+                            </h3>
+                            <div id="active-tasks-list" class="space-y-3">
+                                <!-- Populated via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Files & Resources Upload Simulation -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+                            <h3 class="font-bold text-slate-800 mb-3 flex items-center">
+                                <i class="fas fa-paperclip text-slate-600 ml-2"></i> ملفات وموارد الحصص (LMS Vault)
+                            </h3>
+                            <div class="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center hover:bg-slate-50 transition cursor-pointer mb-3" onclick="triggerFileUpload()">
+                                <i class="fas fa-cloud-upload-alt text-2xl text-indigo-500 mb-1"></i>
+                                <p class="text-xs text-slate-600 font-semibold">اسحبي أو حددي الملفات (PDF, Slide, Code)</p>
+                                <p class="text-[10px] text-slate-400">الحد الأقصى 25MB</p>
+                                <input type="file" id="dummy-file-input" class="hidden" onchange="simulateFileUpload(this)">
+                            </div>
+                            <div id="active-files-list" class="space-y-2 max-h-[150px] overflow-y-auto">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Student Notes Log -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5" id="notes-section">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="font-bold text-slate-800 flex items-center">
+                                    <i class="far fa-sticky-note text-amber-500 ml-2"></i> ملاحظات الطلاب الفردية
+                                </h3>
+                                <span class="text-xs text-slate-400">سجل سري خاص</span>
+                            </div>
+                            <!-- Form to Add Note -->
+                            <div class="flex space-x-2 space-x-reverse mb-4">
+                                <input type="text" id="new-student-note" placeholder="مثال: سارة متميزة بالحل، أحمد يحتاج مراجعة..." class="w-full text-xs p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                <button onclick="addNewStudentNote()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3 py-2 rounded-lg font-bold transition">حفظ</button>
+                            </div>
+                            <div id="active-student-notes" class="space-y-2 max-h-[180px] overflow-y-auto">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Trainer Global To-Do List & Mini Calendar Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <!-- Trainer To-Do (7 Cols) -->
+                <div class="md:col-span-7 bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-800 flex items-center">
+                            <i class="fas fa-check-square text-indigo-600 ml-2"></i> قائمة مهام المدربة الشخصية (To-Do)
+                        </h3>
+                        <span id="todo-count" class="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded">0 متبقية</span>
+                    </div>
+                    <div class="flex space-x-2 space-x-reverse mb-4">
+                        <input type="text" id="new-todo-input" placeholder="مثال: تصحيح كويز بايثون لجروب A..." class="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button onclick="addTodo()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 rounded-lg transition">إضافة</button>
+                    </div>
+                    <ul id="todo-list" class="space-y-2 max-h-[220px] overflow-y-auto">
+                        <!-- Loaded dynamically -->
+                    </ul>
+                </div>
+
+                <!-- Mini Color-Coded Calendar (5 Cols) -->
+                <div class="md:col-span-5 bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                    <h3 class="font-bold text-slate-800 mb-3 flex items-center">
+                        <i class="far fa-calendar-alt text-indigo-600 ml-2"></i> جدول الأسبوع بالألوان
+                    </h3>
+                    <div class="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-500 mb-2">
+                        <div>ح</div><div>ن</div><div>ث</div><div>ر</div><div>خ</div><div>ج</div><div>س</div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center text-sm font-semibold mb-4">
+                        <!-- Tiny visual grid tracker -->
+                        <div class="p-2 bg-slate-50 rounded">12</div>
+                        <div class="p-2 bg-slate-50 rounded">13</div>
+                        <div class="p-2 bg-slate-50 rounded">14</div>
+                        <div class="p-2 bg-indigo-100 text-indigo-800 rounded font-bold ring-2 ring-indigo-600 relative">
+                            15
+                            <span class="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                        </div>
+                        <div class="p-2 bg-slate-50 rounded">16</div>
+                        <div class="p-2 bg-slate-50 rounded">17</div>
+                        <div class="p-2 bg-indigo-50 text-indigo-700 rounded relative">
+                            18
+                            <span class="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-violet-500 rounded-full"></span>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2 space-x-reverse text-xs">
+                            <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
+                            <span class="text-slate-600 font-bold">اليوم: سيشن بايثون (A) ميعاد 4:00م</span>
+                        </div>
+                        <div class="flex items-center space-x-2 space-x-reverse text-xs">
+                            <span class="w-2.5 h-2.5 bg-violet-500 rounded-full"></span>
+                            <span class="text-slate-600">السبت: كويز تحليل البيانات (C) 2:00م</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 text-center text-xs border-t border-slate-800">
+        <p>© 2026 TrainerHub UI Prototype. تم التصميم باحترافية ليناسب طموح المدربات المتميزات.</p>
+    </footer>
+
+    <!-- ADD GROUP MODAL (Pop-up Window) -->
+    <div id="group-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl border border-slate-100 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150">
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg">إنشاء مجموعة تدريبية جديدة</h3>
+                <button onclick="closeModal()" class="text-indigo-200 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form onsubmit="addNewGroup(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">اسم الجروب</label>
+                    <input type="text" id="modal-group-name" required placeholder="مثال: Python Core - Group D" class="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">المادة / البرنامج</label>
+                        <input type="text" id="modal-group-course" required placeholder="مثال: Python Basics" class="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">المستوى</label>
+                        <input type="text" id="modal-group-level" placeholder="مثال: المستوى الأول" class="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">عدد الطلاب</label>
+                        <input type="number" id="modal-group-students" required min="1" placeholder="15" class="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">عدد المحاضرات</label>
+                        <input type="number" id="modal-group-sessions" required min="1" placeholder="12" class="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">تاريخ البدء</label>
+                        <input type="date" id="modal-group-start" class="w-full text-sm px-2 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">مواعيد الجلسات (Schedule)</label>
+                    <input type="text" id="modal-group-schedule" required placeholder="مثال: الإثنين والخميس الساعة 4:00م" class="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex space-x-3 space-x-reverse pt-2">
+                    <button type="submit" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-lg transition">تأكيد الإنشاء</button>
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 rounded-lg transition">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- APPLICATION JAVASCRIPT STATE ENGINE -->
+    <script>
+        // 1. Initial State Data (Pre-populated with real examples matching your description)
+        let appState = {
+            groups: [
+                {
+                    id: 1,
+                    name: "Python - Group A",
+                    course: "Python Basics",
+                    level: "المستوى الأول",
+                    students: 12,
+                    totalSessions: 12,
+                    completedSessions: 3,
+                    schedule: "السبت والثلاثاء الساعة 4:00 مساءً",
+                    timeline: [
+                        { sessionNo: 1, topic: "Variables & Data Types", status: "completed" },
+                        { sessionNo: 2, topic: "Input & Output", status: "completed" },
+                        { sessionNo: 3, topic: "If Statements", status: "completed" },
+                        { sessionNo: 4, topic: "Loops & Iterations", status: "pending" },
+                        { sessionNo: 5, topic: "Functions Introduction", status: "pending" }
+                    ],
+                    tasks: [
+                        { title: "Variables Worksheet", sessionRef: 1, deadline: "منتهي" },
+                        { title: "Calculator Project", sessionRef: 2, deadline: "منتهي" },
+                        { title: "Conditions Quiz", sessionRef: 3, deadline: "معلق" }
+                    ],
+                    files: [
+                        { name: "Variables_Lecture.pdf", size: "1.2 MB", date: "2026-07-01" },
+                        { name: "Conditions_Practice.py", size: "4 KB", date: "2026-07-10" }
+                    ],
+                    studentNotes: [
+                        { id: 1, text: "سارة متميزة جداً في فهم الجمل الشرطية." },
+                        { id: 2, text: "أحمد يحتاج تركيز إضافي في تسليم تاسك الآلة الحاسبة." }
+                    ]
+                },
+                {
+                    id: 2,
+                    name: "Data Analysis - Group C",
+                    course: "Power BI & DAX",
+                    level: "متقدم",
+                    students: 18,
+                    totalSessions: 10,
+                    completedSessions: 5,
+                    schedule: "الأحد والأربعاء الساعة 6:00 مساءً",
+                    timeline: [
+                        { sessionNo: 1, topic: "Introduction to ETL & Power Query", status: "completed" },
+                        { sessionNo: 2, topic: "Star Schema & Data Modeling", status: "completed" },
+                        { sessionNo: 3, topic: "Calculated Columns vs Measures", status: "completed" },
+                        { sessionNo: 4, topic: "Time Intelligence Functions", status: "completed" },
+                        { sessionNo: 5, topic: "Filter Context & CALCULATE", status: "completed" },
+                        { sessionNo: 6, topic: "Advanced DAX Optimization", status: "pending" }
+                    ],
+                    tasks: [
+                        { title: "Financial Dataset Model Design", sessionRef: 2, deadline: "منتهي" },
+                        { title: "DAX Time Intelligence Worksheet", sessionRef: 4, deadline: "معلق" }
+                    ],
+                    files: [
+                        { name: "AdventureWorks_Model.pbix", size: "14.5 MB", date: "2026-07-05" }
+                    ],
+                    studentNotes: [
+                        { id: 1, text: "يوسف يبدي فهماً ممتازاً لعلاقات النجمة (Star Schema)." }
+                    ]
+                }
+            ],
+            todos: [
+                { id: 1, text: "تحضير ملف الـ PDF لسيشن الـ Loops", done: false },
+                { id: 2, text: "تقييم كويز بايثون لجروب A", done: true },
+                { id: 3, text: "إرسال رابط الـ Zoom لجروب البيانات اليوم", done: false }
+            ],
+            activeGroupId: null
+        };
+
+        // 2. DOM Elements
+        const groupsListEl = document.getElementById('groups-list');
+        const emptyStateEl = document.getElementById('empty-state');
+        const activeDashboardEl = document.getElementById('active-dashboard');
+        const groupModalEl = document.getElementById('group-modal');
+        const todoListEl = document.getElementById('todo-list');
+
+        // Timer Variables
+        let timerInterval = null;
+        let timerSeconds = 0;
+        let timerRunning = false;
+
+        // 3. Initialize App Layout
+        function initApp() {
+            renderGroupsList();
+            renderTodos();
+            updateGlobalStats();
+            document.getElementById('current-date').textContent = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        // 4. Update Global Indicators
+        function updateGlobalStats() {
+            document.getElementById('stat-active-groups').textContent = appState.groups.length;
+            document.getElementById('groups-count').textContent = `${appState.groups.length} جروبات`;
+            
+            let totalComp = appState.groups.reduce((acc, curr) => acc + curr.completedSessions, 0);
+            document.getElementById('stat-total-sessions').textContent = totalComp;
+        }
+
+        // 5. Render Groups List on Sidebar
+        function renderGroupsList(filteredGroups = null) {
+            groupsListEl.innerHTML = '';
+            const listToRender = filteredGroups || appState.groups;
+
+            if (listToRender.length === 0) {
+                groupsListEl.innerHTML = `<p class="text-slate-400 text-xs text-center py-6">لا يوجد مجموعات مطابقة لبحثك.</p>`;
+                return;
+            }
+
+            listToRender.forEach(group => {
+                const percentage = Math.round((group.completedSessions / group.totalSessions) * 100);
+                const isActive = appState.activeGroupId === group.id;
+                
+                const groupCard = document.createElement('div');
+                groupCard.className = `p-4 rounded-xl cursor-pointer border transition duration-200 ${
+                    isActive 
+                    ? 'bg-indigo-50/80 border-indigo-200 shadow-sm' 
+                    : 'bg-slate-50/50 border-slate-100 hover:bg-slate-100/50'
+                }`;
+                groupCard.onclick = () => selectGroup(group.id);
+
+                groupCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold text-slate-800 text-sm md:text-base">${group.name}</h4>
+                        <span class="text-[10px] bg-indigo-100 text-indigo-700 font-semibold px-2 py-0.5 rounded-full">${group.level}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3"><i class="fas fa-book-open ml-1"></i> ${group.course}</p>
+                    <div class="flex items-center justify-between text-xs text-slate-400">
+                        <span>نسبة الإنجاز: ${percentage}%</span>
+                        <span>${group.completedSessions}/${group.totalSessions} سيشن</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                        <div class="bg-indigo-600 h-full rounded-full" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+                groupsListEl.appendChild(groupCard);
+            });
+        }
+
+        // 6. Select Group & Populate Main View
+        function selectGroup(groupId) {
+            appState.activeGroupId = groupId;
+            renderGroupsList(); // To refresh highlighters
+            
+            const group = appState.groups.find(g => g.id === groupId);
+            if (!group) return;
+
+            // Hide empty state and show dashboard
+            emptyStateEl.classList.add('hidden');
+            activeDashboardEl.classList.remove('hidden');
+
+            // Set Meta Details
+            document.getElementById('active-group-name').textContent = group.name;
+            document.getElementById('active-group-course').textContent = group.course;
+            document.getElementById('active-group-level').textContent = group.level;
+            document.getElementById('active-group-schedule').textContent = group.schedule;
+            document.getElementById('active-group-students').textContent = `${group.students} طالب وطالبة`;
+
+            // Progress Bar & Calculations
+            const progressPercentage = Math.round((group.completedSessions / group.totalSessions) * 100);
+            document.getElementById('active-group-progress-text').textContent = `${group.completedSessions} / ${group.totalSessions} جلسة (${progressPercentage}%)`;
+            document.getElementById('active-group-progress-bar').style.width = `${progressPercentage}%`;
+
+            // Generate "Next Session Plan"
+            const nextIndex = group.completedSessions; // zero-based index for next topic
+            const nextSessionNo = group.completedSessions + 1;
+            let nextTopic = "مكتمل تماماً!";
+            let planText = "انتهى المنهج الدراسي بنجاح! مراجعة عامة للمشاريع.";
+            
+            if (nextIndex < group.totalSessions) {
+                const upcoming = group.timeline[nextIndex];
+                nextTopic = upcoming ? upcoming.topic : `سيشن رقم ${nextSessionNo}`;
+                planText = `المفروض تشرح [${nextTopic}] في الجلسة القادمة.`;
+            }
+            document.getElementById('next-session-plan').textContent = planText;
+
+            // Render Sub-components
+            renderTimeline(group);
+            renderTasks(group);
+            renderFiles(group);
+            renderStudentNotes(group);
+        }
+
+        // 7. Render Timeline View
+        function renderTimeline(group) {
+            const container = document.getElementById('active-timeline');
+            container.innerHTML = '';
+
+            group.timeline.forEach(event => {
+                const isDone = event.sessionNo <= group.completedSessions;
+                const icon = isDone ? 'fa-check text-emerald-500 bg-emerald-100' : 'fa-hourglass-start text-amber-500 bg-amber-50';
+                
+                const item = document.createElement('div');
+                item.className = "flex items-start space-x-3 space-x-reverse relative pb-2";
+                item.innerHTML = `
+                    <div class="flex items-center justify-center w-6 h-6 rounded-full border border-slate-200 ${icon} z-10 text-xs shrink-0">
+                        <i class="fas ${isDone ? 'fa-check' : 'fa-hourglass-start'}"></i>
+                    </div>
+                    <div class="mr-2">
+                        <p class="text-sm font-semibold text-slate-700">${isDone ? '✓ ' : '⏳ '} سيشن ${event.sessionNo} – ${event.topic}</p>
+                        <p class="text-xs text-slate-400">الحالة: ${isDone ? 'تم الانتهاء والتوثيق' : 'مخطط لها لاحقاً'}</p>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // 8. Render Tasks View
+        function renderTasks(group) {
+            const container = document.getElementById('active-tasks-list');
+            container.innerHTML = '';
+
+            if (group.tasks.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 py-3">لا توجد واجبات معينة بعد.</p>`;
+                return;
+            }
+
+            group.tasks.forEach(task => {
+                const isPending = task.deadline === "معلق";
+                const badge = isPending 
+                    ? 'bg-amber-100 text-amber-800 border-amber-200' 
+                    : 'bg-emerald-100 text-emerald-800 border-emerald-200';
+
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-3 bg-slate-50/80 border border-slate-100 rounded-lg";
+                item.innerHTML = `
+                    <div>
+                        <p class="text-xs text-indigo-600 font-bold">الحصة ${task.sessionRef}</p>
+                        <p class="text-sm font-semibold text-slate-700">${task.title}</p>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${badge}">${task.deadline}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // 9. Log Session Action Button (Increments state, dynamic re-rendering)
+        function logSessionAction() {
+            if (!appState.activeGroupId) return;
+            const group = appState.groups.find(g => g.id === appState.activeGroupId);
+            
+            if (group.completedSessions < group.totalSessions) {
+                group.completedSessions += 1;
+                
+                // Add default session details to timeline if we surpassed the pre-populated array
+                if (group.completedSessions > group.timeline.length) {
+                    group.timeline.push({
+                        sessionNo: group.completedSessions,
+                        topic: `الموضوع المتقدم للحصة ${group.completedSessions}`,
+                        status: "completed"
+                    });
+                }
+                
+                // Redraw UI instantly
+                selectGroup(group.id);
+                updateGlobalStats();
+            } else {
+                alert("جميع حصص هذا الجروب مكتملة بالفعل!");
+            }
+        }
+
+        // 10. Render Files View
+        function renderFiles(group) {
+            const container = document.getElementById('active-files-list');
+            container.innerHTML = '';
+
+            if (group.files.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 py-2">لم يتم رفع أي مستندات للحصص بعد.</p>`;
+                return;
+            }
+
+            group.files.forEach(file => {
+                container.innerHTML += `
+                    <div class="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg text-xs">
+                        <div class="flex items-center space-x-2 space-x-reverse overflow-hidden">
+                            <i class="far fa-file-pdf text-rose-500 text-lg"></i>
+                            <span class="truncate text-slate-700 font-semibold max-w-[120px]">${file.name}</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400">${file.size}</span>
+                    </div>
+                `;
+            });
+        }
+
+        // Simulating File Upload Click
+        function triggerFileUpload() {
+            document.getElementById('dummy-file-input').click();
+        }
+
+        function simulateFileUpload(input) {
+            if (input.files && input.files[0] && appState.activeGroupId) {
+                const group = appState.groups.find(g => g.id === appState.activeGroupId);
+                const fileObj = {
+                    name: input.files[0].name,
+                    size: (input.files[0].size / (1024 * 1024)).toFixed(2) + " MB",
+                    date: new Date().toISOString().split('T')[0]
+                };
+                group.files.push(fileObj);
+                renderFiles(group);
+            }
+        }
+
+        // 11. Student Notes Section Handler
+        function renderStudentNotes(group) {
+            const container = document.getElementById('active-student-notes');
+            container.innerHTML = '';
+
+            if (group.studentNotes.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 py-3">لا توجد ملاحظات عن هذا الجروب حالياً.</p>`;
+                return;
+            }
+
+            group.studentNotes.forEach(note => {
+                container.innerHTML += `
+                    <div class="p-2.5 bg-amber-50/50 border border-amber-100 rounded-lg text-xs relative group flex justify-between items-start">
+                        <p class="text-slate-700 leading-relaxed">${note.text}</p>
+                        <button onclick="deleteStudentNote(${note.id})" class="text-slate-300 hover:text-red-500 transition ml-1"><i class="far fa-trash-alt"></i></button>
+                    </div>
+                `;
+            });
+        }
+
+        function addNewStudentNote() {
+            const input = document.getElementById('new-student-note');
+            if (!input.value.trim() || !appState.activeGroupId) return;
+
+            const group = appState.groups.find(g => g.id === appState.activeGroupId);
+            const newId = group.studentNotes.length ? Math.max(...group.studentNotes.map(n => n.id)) + 1 : 1;
+            
+            group.studentNotes.push({
+                id: newId,
+                text: input.value.trim()
+            });
+
+            input.value = '';
+            renderStudentNotes(group);
+        }
+
+        function deleteStudentNote(noteId) {
+            if (!appState.activeGroupId) return;
+            const group = appState.groups.find(g => g.id === appState.activeGroupId);
+            group.studentNotes = group.studentNotes.filter(n => n.id !== noteId);
+            renderStudentNotes(group);
+        }
+
+        // Focus and scroll helper
+        function openNoteSection() {
+            document.getElementById('notes-section').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('new-student-note').focus();
+        }
+
+        // 12. Trainer Personal To-Do Handlers
+        function renderTodos() {
+            todoListEl.innerHTML = '';
+            let uncompletedCount = 0;
+
+            appState.todos.forEach(todo => {
+                if (!todo.done) uncompletedCount++;
+                
+                const todoItem = document.createElement('li');
+                todoItem.className = "flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100/70 border border-slate-100 rounded-lg text-xs md:text-sm";
+                todoItem.innerHTML = `
+                    <div class="flex items-center space-x-3 space-x-reverse">
+                        <input type="checkbox" ${todo.done ? 'checked' : ''} onchange="toggleTodo(${todo.id})" class="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
+                        <span class="${todo.done ? 'line-through text-slate-400' : 'text-slate-700 font-medium'}">${todo.text}</span>
+                    </div>
+                    <button onclick="deleteTodo(${todo.id})" class="text-slate-300 hover:text-red-500 transition">
+                        <i class="far fa-trash-alt"></i>
+                    </button>
+                `;
+                todoListEl.appendChild(todoItem);
+            });
+
+            document.getElementById('todo-count').textContent = `${uncompletedCount} متبقية`;
+        }
+
+        function addTodo() {
+            const input = document.getElementById('new-todo-input');
+            if (!input.value.trim()) return;
+
+            const newId = appState.todos.length ? Math.max(...appState.todos.map(t => t.id)) + 1 : 1;
+            appState.todos.push({
+                id: newId,
+                text: input.value.trim(),
+                done: false
+            });
+
+            input.value = '';
+            renderTodos();
+        }
+
+        function toggleTodo(todoId) {
+            const todo = appState.todos.find(t => t.id === todoId);
+            if (todo) {
+                todo.done = !todo.done;
+                renderTodos();
+            }
+        }
+
+        function deleteTodo(todoId) {
+            appState.todos = appState.todos.filter(t => t.id !== todoId);
+            renderTodos();
+        }
+
+        // 13. Search Filtering System
+        function filterGroups() {
+            const query = document.getElementById('group-search').value.toLowerCase();
+            const filtered = appState.groups.filter(group => 
+                group.name.toLowerCase().includes(query) || 
+                group.course.toLowerCase().includes(query) ||
+                group.level.toLowerCase().includes(query)
+            );
+            renderGroupsList(filtered);
+        }
+
+        // 14. Session Live Timer Engine
+        function toggleTimer() {
+            const timerBtn = document.getElementById('timer-btn');
+            if (timerRunning) {
+                // Pause Timer
+                clearInterval(timerInterval);
+                timerRunning = false;
+                timerBtn.innerHTML = `<i class="fas fa-play ml-1"></i> ابدأ المؤقت`;
+                timerBtn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+                timerBtn.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+            } else {
+                // Play Timer
+                timerRunning = true;
+                timerBtn.innerHTML = `<i class="fas fa-pause ml-1"></i> إيقاف مؤقت`;
+                timerBtn.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+                timerBtn.classList.add('bg-amber-500', 'hover:bg-amber-600');
+
+                timerInterval = setInterval(() => {
+                    timerSeconds++;
+                    const hrs = String(Math.floor(timerSeconds / 3600)).padStart(2, '0');
+                    const mins = String(Math.floor((timerSeconds % 3600) / 60)).padStart(2, '0');
+                    const secs = String(timerSeconds % 60).padStart(2, '0');
+                    document.getElementById('timer-display').textContent = `${hrs}:${mins}:${secs}`;
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timerSeconds = 0;
+            timerRunning = false;
+            document.getElementById('timer-display').textContent = "00:00:00";
+            const timerBtn = document.getElementById('timer-btn');
+            timerBtn.innerHTML = `<i class="fas fa-play ml-1"></i> ابدأ المؤقت`;
+            timerBtn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+            timerBtn.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+        }
+
+        // 15. Add Group Modal Functions
+        function openModal() {
+            groupModalEl.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            groupModalEl.classList.add('hidden');
+        }
+
+        function addNewGroup(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('modal-group-name').value;
+            const course = document.getElementById('modal-group-course').value;
+            const level = document.getElementById('modal-group-level').value || "المستوى الأول";
+            const students = parseInt(document.getElementById('modal-group-students').value) || 10;
+            const totalSessions = parseInt(document.getElementById('modal-group-sessions').value) || 12;
+            const schedule = document.getElementById('modal-group-schedule').value;
+            
+            const newId = appState.groups.length ? Math.max(...appState.groups.map(g => g.id)) + 1 : 1;
+
+            // Pre-generate standard mock timeline steps based on quantity
+            const generatedTimeline = [];
+            for (let i = 1; i <= totalSessions; i++) {
+                generatedTimeline.push({
+                    sessionNo: i,
+                    topic: `محتوى المنهج للحصة ${i}`,
+                    status: "pending"
+                });
+            }
+
+            const newGroup = {
+                id: newId,
+                name: name,
+                course: course,
+                level: level,
+                students: students,
+                totalSessions: totalSessions,
+                completedSessions: 0,
+                schedule: schedule,
+                timeline: generatedTimeline,
+                tasks: [],
+                files: [],
+                studentNotes: []
+            };
+
+            appState.groups.push(newGroup);
+            
+            // Re-render components
+            updateGlobalStats();
+            renderGroupsList();
+            closeModal();
+            
+            // Clear inputs
+            event.target.reset();
+
+            // Auto-select the newly created group to preview it!
+            selectGroup(newId);
+        }
+
+        // Launch app on load
+        window.onload = initApp;
+    </script>
+</body>
+</html>
